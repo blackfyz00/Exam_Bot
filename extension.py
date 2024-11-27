@@ -28,10 +28,10 @@ def create_object_from_db(to_return, callback, group, column_name=None, exam=Non
 
         if (to_return == 'keyboard'):
             keyboard = InlineKeyboardMarkup()
-            exam_time = dict(zip(df['Экзамен'], df['Время']))
-            for exam, time in exam_time.items():
+            exam_time_list = df[['Экзамен', 'Время']].values.tolist()
+            for exam, time in exam_time_list:
                 keyboard.row(InlineKeyboardButton(f"{exam}: {time}", 
-                                      callback_data=callback + '_' + f"{exam}_{time}"))
+                                              callback_data=callback + '_' + f"{exam}_{time}"))
             keyboard.row(InlineKeyboardButton('Домой', callback_data='start'))
             return keyboard
         
@@ -123,21 +123,29 @@ def watch_students(group,exam):
     
 def change_exam_list_for_groups(action,group=None,exam=None,time=None):
     path = os.path.join(os.path.dirname(sys.argv[0]), 'db_groups', f'{group}db.xlsx')
+    andpath = os.path.join(os.path.dirname(sys.argv[0]), 'final_record', f'{group}.xlsx')
     
     if(action=='remove'):
         df = pd.read_excel(path).astype(str).sort_values(by=['Экзамен','Время'])
         condition = (df['Экзамен'] == f'{exam}') & (df['Время'] == f'{time}')
         # Удаление строки, удовлетворяющей условию
         df = df.drop(df[condition].index).to_excel(path, index=False)
-        return
+        try:
+            anddf = pd.read_excel(andpath).astype(str).sort_values(by=['Экзамен','Время'])
+            anddf = anddf.drop(anddf[condition].index).to_excel(andpath, index=False)
+        except FileNotFoundError:
+            return
+
     
     if(action=='removeall_queues'):
         path = os.path.join(os.path.dirname(sys.argv[0]), 'db_groups')
+        andpath = os.path.join(os.path.dirname(sys.argv[0]), 'final_record')
         for filename in os.listdir(path):
             file_path = os.path.join(path, filename)
             os.unlink(file_path)
-        return
-
+        for filename in os.listdir(andpath):
+            file_path = os.path.join(andpath, filename)
+            os.unlink(file_path)
 
 def clean_alldata():
     path = os.path.join(os.path.dirname(sys.argv[0]), 'final_record')
@@ -147,19 +155,25 @@ def clean_alldata():
                 os.unlink(file_path)
             except Exception as e:
                 print(f"Не удалось удалить {file_path}. Причина: {e}")
-    return
-
+                
 def add_queue_group(groupex_andtime):
     path = os.path.join(os.path.dirname(sys.argv[0]), 'db_groups', f'{groupex_andtime[0]}db.xlsx')
     groupex_andtime = groupex_andtime[:3]
-    try:
-        df = pd.read_excel(path)
-        new_row = {'Экзамен': f'{groupex_andtime[1]}', 'Время': f'{groupex_andtime[2]}'}
-        df.loc[len(df)] = new_row
-        df.to_excel(path, index=False)
+    if(len(groupex_andtime)==3):
+        try:
+            df = pd.read_excel(path)
+            new_row = {'Экзамен': f'{groupex_andtime[1]}', 'Время': f'{groupex_andtime[2]}'}
+            df.loc[len(df)] = new_row
+            df.to_excel(path, index=False)
 
-    except FileNotFoundError:
-        columns = ['Экзамен', 'Время']
-        df = pd.DataFrame(columns=columns)
-        df.to_excel(path, index=False)
-        add_queue_group(groupex_andtime)
+        except FileNotFoundError:
+            columns = ['Экзамен', 'Время']
+            df = pd.DataFrame(columns=columns)
+            df.to_excel(path, index=False)
+            add_queue_group(groupex_andtime)
+
+    else:
+        return
+    
+def contains_letter(s):
+    return any(char.isalpha() for char in s)

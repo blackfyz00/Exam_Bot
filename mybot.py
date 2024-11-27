@@ -26,29 +26,27 @@ def callback_query_main(call):
         users[user_id] = []
         keyboard_init = InlineKeyboardMarkup()
         keyboard_init.row(InlineKeyboardButton("Записаться на экзамен", callback_data='group_rec'))
-        keyboard_init.row(InlineKeyboardButton("For admins", 
+        keyboard_init.row(InlineKeyboardButton("Для админов", 
                                                callback_data='for_admins'))
-        bot.send_message(call.message.chat.id, text='Выберите действие', reply_markup=keyboard_init)
+        keyboard_init.row(InlineKeyboardButton("Посмотреть списки экзаменуемых и время", 
+                                                callback_data='for_teach'))
+        bot.send_message(call.message.chat.id, text='Выберите действие:', reply_markup=keyboard_init)
 
     if call.data.startswith('group_rec'):
         keyboard_record1 = exten.create_keyboard_from_dir(dirname='list_student', 
                                                          callback='exam_rec')
         bot.edit_message_text(chat_id=call.message.chat.id, 
                             message_id=call.message.message_id, 
-                            text="Отлично! Выбери группу на запись", reply_markup=keyboard_record1)
+                            text="Отлично! Выберите группу на запись:", reply_markup=keyboard_record1)
         
     if call.data.startswith('for_admins'):
         keyboard_foradmins1 = InlineKeyboardMarkup()
-        keyboard_foradmins1.row(InlineKeyboardButton("Очистить данные с предыдущего семестра", 
-                                                     callback_data='clean_alldata'))
-        keyboard_foradmins1.row(InlineKeyboardButton("Посмотреть списки экзаменуемых и время", 
-                                                     callback_data='for_teach'))
         keyboard_foradmins1.row(InlineKeyboardButton("Изменить расписание и время экзаменов", 
                                                      callback_data='change_exam_list_for_groups'))
         keyboard_foradmins1.row(InlineKeyboardButton('Домой', callback_data='start'))
         bot.edit_message_text(chat_id=call.message.chat.id, 
                             message_id=call.message.message_id, 
-                            text="Вы вошли в режим админа. Выберите действие", 
+                            text="Вы вошли в режим админа. Выберите действие:", 
                             reply_markup=keyboard_foradmins1)
         
 
@@ -57,7 +55,7 @@ def callback_query_main(call):
                                                        callback='teach_watch_subject')
         bot.edit_message_text(chat_id=call.message.chat.id, 
                             message_id=call.message.message_id, 
-                            text="Отлично! Выберите группу чтобы просмотреть список", 
+                            text="Отлично! Выберите группу для просмотра студентов:", 
                             reply_markup=keyboard_record2)
 
     if call.data.startswith('teach_watch_subject'):
@@ -69,7 +67,7 @@ def callback_query_main(call):
                                                         group=users[user_id][0])
         bot.edit_message_text(chat_id=call.message.chat.id, 
                                 message_id=call.message.message_id, 
-                                text=f"Вы выбрали группу {users[user_id][0]}. Выберите экзамен для просмотра", 
+                                text=f"Вы выбрали группу {users[user_id][0]}. Выберите экзамен для просмотра:", 
                                 reply_markup=keyboard_record22)
     
     if call.data.startswith('change_exam_list_for_groups'):
@@ -83,35 +81,36 @@ def callback_query_main(call):
         keyboard_foradmins3.row(InlineKeyboardButton('Домой', callback_data='start'))
         bot.edit_message_text(chat_id=call.message.chat.id, 
                             message_id=call.message.message_id, 
-                            text="Вы вошли в режим работы с очередями. Выберите действие", 
+                            text="Вы вошли в режим работы с очередями. Выберите действие:", 
                             reply_markup=keyboard_foradmins3)
         
 
     if call.data.startswith('clean_queue'):
-        keyboard_foradmins3 = InlineKeyboardMarkup()
-        keyboard_foradmins3.row(InlineKeyboardButton('Отмена', callback_data='start'))
-        keyboard_foradmins3.row(InlineKeyboardButton("Подтвердить", 
-                                                     callback_data='r_all_queue'))
+        keyboard_foradmins4 = InlineKeyboardMarkup()
+        keyboard_foradmins4.row(InlineKeyboardButton("Подтвердить", 
+                                                     callback_data='rsudo_all_queue'))
+        keyboard_foradmins4.row(InlineKeyboardButton('Отмена', callback_data='start'))
         bot.edit_message_text(chat_id=call.message.chat.id, 
                     message_id=call.message.message_id, 
-                    text="Подтвердите удаление очередей", 
-                    reply_markup=keyboard_foradmins3)
+                    text="Подтвердите удаление очередей.", 
+                    reply_markup=keyboard_foradmins4)
 
-    if call.data.startswith('clean_queue'):
-        exten.change_exam_list_for_groups(action='removeall_queues')
-        keyboard_foradmins3 = InlineKeyboardMarkup()
-        keyboard_foradmins3.row(InlineKeyboardButton('Домой', callback_data='start'))
+    if call.data.startswith('rsudo_all_queue'):
+        keyboard_foradmins2 = InlineKeyboardMarkup()
+        keyboard_foradmins2.row(InlineKeyboardButton('Домой', callback_data='start'))
         bot.edit_message_text(chat_id=call.message.chat.id, 
-            message_id=call.message.message_id, 
-            text="Все очереди удалены", 
-            reply_markup=keyboard_foradmins3)
+                                message_id=call.message.message_id, 
+                                text=f"Введите пароль", 
+                                reply_markup=keyboard_foradmins2)
+        bot.register_next_step_handler(call.message, lambda msg: handle_password(msg, info='queue'))
+        
         
     if call.data.startswith('add_queue'):
         keyboard_addqueue = exten.create_keyboard_from_dir(dirname='list_student', 
                                                          callback='add_group_inqueue')
         bot.edit_message_text(chat_id=call.message.chat.id, 
                             message_id=call.message.message_id, 
-                            text="Отлично! Выберите группу на добавление в очередь", 
+                            text="Отлично! Выберите группу на добавление в очередь:", 
                             reply_markup=keyboard_addqueue)
         
     if call.data.startswith('add_group_inqueue'):
@@ -123,14 +122,14 @@ def callback_query_main(call):
                                 message_id=call.message.message_id, 
                                 text="Введите название предмета и время через пробел, например: Алгебра 14:00", 
                                 reply_markup=keyboard_foradmins2)
-        bot.register_next_step_handler(call.message, lambda msg: input_subject_time(msg, info=users[user_id]))
+        bot.register_next_step_handler(call.message, lambda msg: input_subject_time(msg, info=users[user_id], time=msg.text.split()[-1]))
 
     if call.data.startswith('remove_queue'):
         keyboard_rqueue = exten.create_keyboard_from_dir(dirname='db_groups', 
                                                          callback='remove_groupqueue')
         bot.edit_message_text(chat_id=call.message.chat.id, 
                             message_id=call.message.message_id, 
-                            text="Отлично! Выберите группу", 
+                            text="Отлично! Выберите группу:", 
                             reply_markup=keyboard_rqueue)
 
     if call.data.startswith('remove_groupqueue'):
@@ -142,7 +141,7 @@ def callback_query_main(call):
                                                          )
         bot.edit_message_text(chat_id=call.message.chat.id, 
                             message_id=call.message.message_id, 
-                            text="Отлично! Выберите очередь на удаление", 
+                            text="Отлично! Выберите очередь на удаление:", 
                             reply_markup=keyboard_rqueue)    
 
     if call.data.startswith('remove_Ygroupqueue'):
@@ -170,26 +169,6 @@ def callback_query_main(call):
                                 message_id=call.message.message_id, 
                                 text="Очередь успешно сброшена", 
                                 reply_markup=keyboard_foradmins5)
-        
-
-    if call.data.startswith('clean_alldata'):
-        keyboard_foradmins2 = InlineKeyboardMarkup()
-        keyboard_foradmins2.row(InlineKeyboardButton("Подтвердить", 
-                                                     callback_data='confirm_deleting'))
-        keyboard_foradmins2.row(InlineKeyboardButton('Домой', callback_data='start'))
-        bot.edit_message_text(chat_id=call.message.chat.id, 
-                                message_id=call.message.message_id, 
-                                text="Подтвердите сброс очередей", 
-                                reply_markup=keyboard_foradmins2)
-        
-    if call.data.startswith('confirm_deleting'):
-        keyboard_foradmins2 = InlineKeyboardMarkup()
-        keyboard_foradmins2.row(InlineKeyboardButton('Домой', callback_data='start'))
-        bot.edit_message_text(chat_id=call.message.chat.id, 
-                                message_id=call.message.message_id, 
-                                text=f"Введите пароль", 
-                                reply_markup=keyboard_foradmins2)
-        bot.register_next_step_handler(call.message, handle_password)
      
     if call.data.startswith('teach_watch_group'):
         substring = call.data[len("teach_watch_group_"):]
@@ -210,7 +189,7 @@ def callback_query_main(call):
                                                        group=users[user_id][0])
         bot.edit_message_text(chat_id=call.message.chat.id, 
                                 message_id=call.message.message_id, 
-                                text=f"Ты выбрал группу {users[user_id][0]}. Выбери на какой экзамен записаться", 
+                                text=f"Вы выбрали группу {users[user_id][0]}. Выберите на какой экзамен записаться:", 
                                 reply_markup=keyboard_record3)
 
     if call.data.startswith('exam_time_rec'):
@@ -222,7 +201,7 @@ def callback_query_main(call):
                                                        callback='name_rec', group=users[user_id][0])
         bot.edit_message_text(chat_id=call.message.chat.id, 
                                 message_id=call.message.message_id, 
-                                text=f"Ты выбрал экзамен {users[user_id][1]}. Выбери время записи", 
+                                text=f"Вы выбрали экзамен {users[user_id][1]}. Выберите время записи:", 
                                 reply_markup=keyboard_record4)
 
     if call.data.startswith('name_rec'):
@@ -232,7 +211,7 @@ def callback_query_main(call):
         keyboard_record5 = exten.create_keyboard_from_list(students, callback='prepare_to_record')
         bot.edit_message_text(chat_id=call.message.chat.id, 
                                 message_id=call.message.message_id, 
-                                text=f"Ты выбрал время {users[user_id][2]}. Выбери себя, чтобы записаться", 
+                                text=f"Вы выбрали время {users[user_id][2]}. Выберите студента, для записи на экзамен:", 
                                 reply_markup=keyboard_record5)
         
     if call.data.startswith('prepare_to_record'):
@@ -243,7 +222,7 @@ def callback_query_main(call):
         keyboard_record6.row(InlineKeyboardButton("Отмена", callback_data='start'))
         bot.edit_message_text(chat_id=call.message.chat.id, 
                                 message_id=call.message.message_id, 
-                                text=f"Ты выбрал имя {users[user_id][3]}. Подтверди ввод в базу данных", 
+                                text=f"Студент {users[user_id][3]} будет записан на экзамен. \nПодтвердите ввод в базу данных.", 
                                 reply_markup=keyboard_record6)
 
     if call.data == 'record_to_final_list':
@@ -252,36 +231,45 @@ def callback_query_main(call):
         keyboard_record7.row(InlineKeyboardButton("Домой", callback_data='start'))
         bot.edit_message_text(chat_id=call.message.chat.id,
                               message_id=call.message.message_id, 
-                              text='Вы успешно записались на экзамен',
+                              text='Вы успешно записались на экзамен!',
                               reply_markup=keyboard_record7)
         
-def handle_password(message):
+def handle_password(message,info):
     user_password = message.text
+    if user_password == sudo_password and info == 'queue':
+        exten.change_exam_list_for_groups(action='removeall_queues')
+        keyboard_foradmins3 = InlineKeyboardMarkup()
+        keyboard_foradmins3.row(InlineKeyboardButton('Домой', callback_data='start'))
+        bot.send_message(chat_id=message.chat.id,  
+                            text="Пароль верный. Все очереди удалены.", 
+                            reply_markup=keyboard_foradmins3)
+        return
 
-    if user_password == sudo_password:
-        exten.clean_alldata()
-        keyboard_clean_home = InlineKeyboardMarkup()
-        keyboard_clean_home.row(InlineKeyboardButton("Домой", callback_data='start'))
-        bot.send_message(chat_id=message.chat.id, 
-                              text='Пароль верный. Все очереди успешно сброшены.',
-                              reply_markup=keyboard_clean_home)
     else:
         keyboard_clean_home = InlineKeyboardMarkup()
         keyboard_clean_home.row(InlineKeyboardButton("Домой", callback_data='start'))
         bot.send_message(chat_id=message.chat.id,
-                              text='Пароль неверный. Попробуйте снова',
+                              text='Пароль неверный. Попробуйте снова.',
                               reply_markup=keyboard_clean_home)
 
-def input_subject_time(message,info):
-    cortej = message.text.split()
-    for item in cortej:
-        info.append(item)
-    exten.add_queue_group(info)
-    keyboard_add_queue = InlineKeyboardMarkup()
-    keyboard_add_queue.row(InlineKeyboardButton("Домой", callback_data='start'))
-    bot.send_message(chat_id=message.chat.id,
-                            text='Вы успешно добавили новую очередь',
-                            reply_markup=keyboard_add_queue)
-
-
+def input_subject_time(message,info,time):
+    mes = message.text
+    mes = mes.replace(time, "") 
+    if exten.contains_letter(time) == False and exten.contains_letter(mes) == True:
+        info.append(mes)
+        info.append(time)
+        exten.add_queue_group(info)
+        keyboard_add_queue = InlineKeyboardMarkup()
+        keyboard_add_queue.row(InlineKeyboardButton("Домой", callback_data='start'))
+        bot.send_message(chat_id=message.chat.id,
+                                text='Вы успешно добавили новую очередь!',
+                                reply_markup=keyboard_add_queue)
+    else:
+        keyboard_add_queue = InlineKeyboardMarkup()
+        keyboard_add_queue.row(InlineKeyboardButton("Домой", callback_data='start'))
+        bot.send_message(chat_id=message.chat.id,
+                                text='Время экзамена указано неверно. Повторите попытку записи очереди.',
+                                reply_markup=keyboard_add_queue)
+        
+                            
 bot.polling()
